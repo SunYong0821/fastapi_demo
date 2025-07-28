@@ -8,6 +8,7 @@ await User.bulk_create([User(**data) for data in users_data])
 await User.filter(is_active=False).delete()
 
 await User.filter(id=user_id).update(**kwargs)
+await user.save()
 
 await User.filter(username__icontains=username_pattern)
 offset = (page - 1) * page_size
@@ -27,3 +28,14 @@ async def good_batch_process():
         # 逐条处理，避免内存溢出
         await process_user(user)
 
+# 隐式回滚
+try:
+    async with in_transaction():
+        # Tortoise会自动将这些操作放在同一个事务中
+        user = await User.create(username="john_doe",email="john@example.com")
+        profile = await Profile.create(user=user,bio="Software developer",website="https://johndoe.com"）
+        # 如果这里出错，上面两个创建操作都会回滚
+        if not user.email.endswith('@example.com'):
+            raise ValueError("Invalid email domain")
+except:
+    raise
