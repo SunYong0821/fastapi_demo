@@ -48,5 +48,31 @@ async def create_user(request: Request):
 @router.get("/getAllUsers")
 async def get_users():
     users = await User.all()
-    return await User.list_to_dict(users)
+    return [i.to_dict() for i in users]
 
+@router.post("/changeUser")
+async def change_user(request: Request):
+    try:
+        body = await request.json()
+        username = body.get("username")
+        oldpassword = body.get("oldpassword")
+        newpassword = body.get("newpassword")
+        version = body.get("version")
+
+        if not username or not oldpassword or not newpassword:
+            return {"status_code": 400, "msg": "用户名或密码不能为空"}
+
+        user = await User.filter(username=username).first()
+        if not verify_password(oldpassword, user.password):
+            return {"status_code": 400, "msg": "密码错误"}
+        if user.version != version:
+            return {"status_code": 400, 'msg': '版本错误'}
+
+        # 原子性
+        count = await User.filter(username=username, version=version).update(password=hash_password(newpassword), version=version+1)
+        if count == 0:
+            return {"status_code": 400, 'msg': '修改密码冲突，刷新之后再试'}
+        
+        return {"status_code": 200, 'msg': '用户修改密码成功'}
+    except Exception as e:
+        return {"status_code": 400, "msg": str(e)}
