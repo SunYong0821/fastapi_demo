@@ -1,5 +1,6 @@
 from tortoise.models import Model
 from tortoise import fields
+from datetime import datetime
 
 class User(Model):
     id = fields.IntField(pk=True)
@@ -14,7 +15,10 @@ class User(Model):
     def to_dict(self):
         json = {}
         for i in self._meta.fields_map.keys():
-            json[i] = getattr(self, i)
+            val = getattr(self, i)
+            if isinstance(val, datetime):
+                val = val.strftime('%Y-%m-%d %H:%M:%S')
+            json[i] = val
         return json
     
     def update(self, **kwargs):
