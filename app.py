@@ -7,7 +7,8 @@ import uvicorn
 app = FastAPI(lifespan=lifespan)
 # app = FastAPI(lifespan=lifespan, docs_url=None, redoc_url=None)
 
-app.add_middleware(CORSMiddleware,allow_origins=["*"],allow_methods=["*"],allow_headers=["*"])
+# allow_credentials=True production env
+app.add_middleware(CORSMiddleware,allow_origins=["*"],allow_methods=["GET", "POST"],allow_headers=["*"])
 app.middleware("http")(auth_middleware)
 
 @app.get("/")
